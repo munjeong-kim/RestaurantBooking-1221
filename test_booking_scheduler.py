@@ -17,6 +17,21 @@ UNDER_CAPA = 2
 TEST_CAPA = 3
 OVER_CAPA = 4
 
+class SundayBookingScheduler(BookingScheduler):
+    def __init__(self):
+        super().__init__(TEST_CAPA)
+
+    def get_now(self):
+        return datetime.strptime("2026/07/05 09:00", "%Y/%m/%d %H:%M")
+
+
+class MondayBookingScheduler(BookingScheduler):
+    def __init__(self):
+        super().__init__(TEST_CAPA)
+
+    def get_now(self):
+        return datetime.strptime("2026/07/06 09:00", "%Y/%m/%d %H:%M")
+
 @pytest.fixture
 def booking_scheduler():
     return BookingScheduler(TEST_CAPA)
@@ -58,7 +73,6 @@ def test_시간대별_인원제한이_있다_같은_시간대에_Capacity_초과
         booking_scheduler.add_schedule(schedule)
 
 
-
 def test_시간대별_인원제한이_있다_같은_시간대가_다르면_Capacity_차있어도_스케쥴_추가_성공(booking_scheduler):
     schedule = Schedule(ON_THE_HOUR, TEST_CAPA, TEST_CUSTOMER)
     booking_scheduler.add_schedule(schedule)
@@ -91,7 +105,18 @@ def test_이메일이_있는_경우에는_이메일_발송(booking_scheduler_wit
     assert test_email_sender.called
 
 def test_현재날짜가_일요일인_경우_예약불가_예외처리():
-    pass
+    booking_scheduler = SundayBookingScheduler()
+
+    schedule = Schedule(ON_THE_HOUR, UNDER_CAPA, TEST_CUSTOMER_WITH_EMAIL)
+
+    with pytest.raises(ValueError, match="Booking system is not available on Sunday"):
+        booking_scheduler.add_schedule(schedule)
 
 def test_현재날짜가_일요일이_아닌경우_예약가능():
-    pass
+    booking_scheduler = MondayBookingScheduler()
+
+    schedule = Schedule(ON_THE_HOUR, UNDER_CAPA, TEST_CUSTOMER_WITH_EMAIL)
+
+    booking_scheduler.add_schedule(schedule)
+
+    assert booking_scheduler.has_schedule(schedule)
