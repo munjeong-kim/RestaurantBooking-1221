@@ -17,20 +17,13 @@ UNDER_CAPA = 2
 TEST_CAPA = 3
 OVER_CAPA = 4
 
-class SundayBookingScheduler(BookingScheduler):
-    def __init__(self):
+class TestableBookingScheduler(BookingScheduler):
+    def __init__(self, date_time):
         super().__init__(TEST_CAPA)
+        self.date_time = date_time
 
     def get_now(self):
-        return datetime.strptime("2026/07/05 09:00", "%Y/%m/%d %H:%M")
-
-
-class MondayBookingScheduler(BookingScheduler):
-    def __init__(self):
-        super().__init__(TEST_CAPA)
-
-    def get_now(self):
-        return datetime.strptime("2026/07/06 09:00", "%Y/%m/%d %H:%M")
+        return datetime.strptime(self.date_time, "%Y/%m/%d %H:%M")
 
 @pytest.fixture
 def booking_scheduler():
@@ -105,7 +98,7 @@ def test_이메일이_있는_경우에는_이메일_발송(booking_scheduler_wit
     assert test_email_sender.called
 
 def test_현재날짜가_일요일인_경우_예약불가_예외처리():
-    booking_scheduler = SundayBookingScheduler()
+    booking_scheduler = TestableBookingScheduler("2026/07/05 09:00")
 
     schedule = Schedule(ON_THE_HOUR, UNDER_CAPA, TEST_CUSTOMER_WITH_EMAIL)
 
@@ -113,7 +106,7 @@ def test_현재날짜가_일요일인_경우_예약불가_예외처리():
         booking_scheduler.add_schedule(schedule)
 
 def test_현재날짜가_일요일이_아닌경우_예약가능():
-    booking_scheduler = MondayBookingScheduler()
+    booking_scheduler = TestableBookingScheduler("2026/07/06 09:00")
 
     schedule = Schedule(ON_THE_HOUR, UNDER_CAPA, TEST_CUSTOMER_WITH_EMAIL)
 
