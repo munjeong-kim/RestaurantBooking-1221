@@ -6,26 +6,29 @@ from schedule import Customer, Schedule
 from communication import SmsSender, MailSender
 from booking_scheduler import BookingScheduler
 
+NOT_ON_THE_HOUR = datetime.strptime('2026/07/02 09:03', '%Y/%m/%d %H:%M')
+ON_THE_HOUR = datetime.strptime('2026/07/02 09:00', '%Y/%m/%d %H:%M')
+TEST_CUSTOMER = Customer("tester", "1234-1234")
+
+UNDER_CAPA = 2
+TEST_CAPA = 3
+OVER_CAPA = 4
+
 @pytest.fixture
 def booking_scheduler():
-    return BookingScheduler(10)
+    return BookingScheduler(TEST_CAPA)
 
 def test_예약은_정시에만_가능하다_정시가_아닌경우_예약불가(booking_scheduler):
-    not_on_the_hour = datetime.strptime('2026/07/02 09:03', '%Y/%m/%d %H:%M')
 
-    customer = Customer("name", "1234-1234")
-    schedule = Schedule(not_on_the_hour, 4, customer)
+    schedule = Schedule(NOT_ON_THE_HOUR, UNDER_CAPA, TEST_CUSTOMER)
 
     with pytest.raises(ValueError):
         booking_scheduler.add_schedule(schedule)
 
 
 def test_예약은_정시에만_가능하다_정시인_경우_예약가능(booking_scheduler):
-    on_the_hour = datetime.strptime('2026/07/02 09:00', '%Y/%m/%d %H:%M')
 
-    customer = Customer("name", "1234-1234")
-    schedule = Schedule(on_the_hour, 4, customer)
-
+    schedule = Schedule(ON_THE_HOUR, UNDER_CAPA, TEST_CUSTOMER)
     booking_scheduler.add_schedule(schedule)
 
     assert booking_scheduler.has_schedule(schedule)
