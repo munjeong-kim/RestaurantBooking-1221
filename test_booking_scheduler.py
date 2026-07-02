@@ -12,7 +12,6 @@ ON_THE_HOUR = datetime.strptime('2026/07/02 09:00', '%Y/%m/%d %H:%M')
 
 UNDER_CAPA = 2
 TEST_CAPA = 3
-OVER_CAPA = 4
 
 @pytest.fixture
 def customer(mocker):
@@ -29,14 +28,6 @@ def customer_with_email(mocker):
     mock.get_email.return_value = "email@gmail.com"
 
     return mock
-
-class TestableBookingScheduler(BookingScheduler):
-    def __init__(self, date_time):
-        super().__init__(TEST_CAPA)
-        self.date_time = date_time
-
-    def get_now(self):
-        return datetime.strptime(self.date_time, "%Y/%m/%d %H:%M")
 
 @pytest.fixture
 def booking_scheduler():
@@ -110,16 +101,18 @@ def test_이메일이_있는_경우에는_이메일_발송(booking_scheduler_wit
 
     test_email_sender.send_mail.assert_called()
 
-def test_현재날짜가_일요일인_경우_예약불가_예외처리(customer_with_email):
-    booking_scheduler = TestableBookingScheduler("2026/07/05 09:00")
+def test_현재날짜가_일요일인_경우_예약불가_예외처리(mocker, booking_scheduler, customer_with_email):
+    mock_get_now = mocker.patch("booking_scheduler.BookingScheduler.get_now",
+                                return_value=datetime.strptime("2026/07/05 09:00", "%Y/%m/%d %H:%M"))
 
     schedule = Schedule(ON_THE_HOUR, UNDER_CAPA, customer_with_email)
 
     with pytest.raises(ValueError, match="Booking system is not available on Sunday"):
         booking_scheduler.add_schedule(schedule)
 
-def test_현재날짜가_일요일이_아닌경우_예약가능(customer_with_email):
-    booking_scheduler = TestableBookingScheduler("2026/07/06 09:00")
+def test_현재날짜가_일요일이_아닌경우_예약가능(mocker, booking_scheduler, customer_with_email):
+    mock_get_now = mocker.patch("booking_scheduler.BookingScheduler.get_now",
+                                return_value=datetime.strptime("2026/07/06 09:00", "%Y/%m/%d %H:%M"))
 
     schedule = Schedule(ON_THE_HOUR, UNDER_CAPA, customer_with_email)
 
