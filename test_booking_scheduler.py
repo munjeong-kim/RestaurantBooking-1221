@@ -6,7 +6,6 @@ from pytest_mock import mocker
 from schedule import Customer, Schedule
 from communication import SmsSender, MailSender
 from booking_scheduler import BookingScheduler
-from testSender import TestSmsSender, TestEmailSender
 
 NOT_ON_THE_HOUR = datetime.strptime('2026/07/02 09:03', '%Y/%m/%d %H:%M')
 ON_THE_HOUR = datetime.strptime('2026/07/02 09:00', '%Y/%m/%d %H:%M')
@@ -44,16 +43,16 @@ def booking_scheduler():
     return BookingScheduler(TEST_CAPA)
 
 @pytest.fixture
-def booking_scheduler_with_sms_mock():
+def booking_scheduler_with_sms_mock(mocker):
     scheduler = BookingScheduler(TEST_CAPA)
-    sms_sender = TestSmsSender()
+    sms_sender = mocker.Mock()
     scheduler.set_sms_sender(sms_sender)
     return scheduler, sms_sender
 
 @pytest.fixture
-def booking_scheduler_with_email_mock():
+def booking_scheduler_with_email_mock(mocker):
     scheduler = BookingScheduler(TEST_CAPA)
-    email_sender = TestEmailSender()
+    email_sender = mocker.Mock()
     scheduler.set_mail_sender(email_sender)
     return scheduler, email_sender
 
@@ -95,21 +94,21 @@ def test_예약완료시_SMS는_무조건_발송(booking_scheduler_with_sms_mock
     schedule = Schedule(ON_THE_HOUR, UNDER_CAPA, customer)
     booking_scheduler.add_schedule(schedule)
 
-    assert test_sms_sender.called
+    test_sms_sender.send.assert_called()
 
 def test_이메일이_없는_경우에는_이메일_미발송(booking_scheduler_with_email_mock, customer):
     booking_scheduler, test_email_sender = booking_scheduler_with_email_mock
     schedule = Schedule(ON_THE_HOUR, UNDER_CAPA, customer)
     booking_scheduler.add_schedule(schedule)
 
-    assert not test_email_sender.called
+    test_email_sender.send_mail.assert_not_called()
 
 def test_이메일이_있는_경우에는_이메일_발송(booking_scheduler_with_email_mock, customer_with_email):
     booking_scheduler, test_email_sender = booking_scheduler_with_email_mock
     schedule = Schedule(ON_THE_HOUR, UNDER_CAPA, customer_with_email)
     booking_scheduler.add_schedule(schedule)
 
-    assert test_email_sender.called
+    test_email_sender.send_mail.assert_called()
 
 def test_현재날짜가_일요일인_경우_예약불가_예외처리(customer_with_email):
     booking_scheduler = TestableBookingScheduler("2026/07/05 09:00")
